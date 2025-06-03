@@ -1,19 +1,21 @@
 <?php
 
-use App\Http\Controllers\SessionController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SessionController;
+use App\Http\Controllers\Admin\DescriptionController;
 
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard'); // ← DIUBAH
-    })->name('dashboard');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [SessionController::class, 'index'])->name('login');
+    Route::post('/sesi/login', [SessionController::class, 'login']);
 });
 
+Route::get('/sesi/logout', [SessionController::class, 'logout'])->name('logout');
 
-// Tambahkan ini untuk login (dengan nama login)
-Route::get('/login', [SessionController::class, 'index'])->name('login');
+// Semua route admin hanya bisa diakses jika sudah login
+Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('dashboard');
 
-// Sesi routes
-Route::get('sesi', [SessionController::class, 'index']);
-Route::post('/sesi/login', [SessionController::class, 'login']);
-Route::get('/sesi/logout', [SessionController::class, 'logout']);
+    Route::resource('descriptions', DescriptionController::class);
+});

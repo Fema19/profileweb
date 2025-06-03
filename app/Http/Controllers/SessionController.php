@@ -19,29 +19,32 @@ class SessionController extends Controller
 
     public function login(Request $request)
     {
-        // Validasi form input
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+        // Validasi input
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required']
         ]);
 
-        $credentials = $request->only('email', 'password');
-
+        // Coba autentikasi
         if (Auth::attempt($credentials)) {
-            // Login berhasil
-            $request->session()->regenerate(); // Perlindungan session fixation
-            return redirect()->route('admin.dashboard');
+            $request->session()->regenerate(); // Hindari session fixation
+
+            return redirect()->intended(route('admin.dashboard'));
         }
 
-        // Login gagal, redirect kembali ke login dengan error
-        return redirect('/login')->withErrors(['Email atau password salah!'])->withInput();
+        // Gagal login, redirect dengan error flash & simpan input sebelumnya
+        return back()
+            ->withErrors(['email' => 'Email atau password salah!'])
+            ->withInput();
     }
 
     public function logout(Request $request)
     {
         Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken(); // Untuk keamanan CSRF
-        return redirect('/login');
+
+        $request->session()->invalidate();          // Hapus semua data session
+        $request->session()->regenerateToken();     // Regenerasi token CSRF baru
+
+        return redirect()->route('login');
     }
 }
